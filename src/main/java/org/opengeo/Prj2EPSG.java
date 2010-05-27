@@ -27,22 +27,26 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
+import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.AbstractAuthorityFactory;
 import org.geotools.referencing.factory.DeferredAuthorityFactory;
-import org.geotools.referencing.factory.epsg.ThreadedHsqlEpsgFactory;
 import org.geotools.util.WeakCollectionCleaner;
 import org.geotools.util.logging.Logging;
 import org.opengis.referencing.AuthorityFactory;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.restlet.Application;
+import org.restlet.Context;
 import org.restlet.Restlet;
 import org.restlet.Router;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
+
+import com.noelios.restlet.component.ChildContext;
+import com.noelios.restlet.http.HttpResponse;
 
 public class Prj2EPSG extends Application {
 
@@ -85,7 +89,7 @@ public class Prj2EPSG extends Application {
         StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
         File directory = new File(System.getProperty("java.io.tmpdir", "."), "Geotools");
         if (directory.isDirectory() || directory.mkdir()) {
-            directory = new File(directory, "LuceneIndex-" + ThreadedHsqlEpsgFactory.VERSION);
+            directory = new File(directory, "LuceneIndex-" + 123);
             directory.mkdir();
         }
         if (directory.exists() && directory.isDirectory()) {
@@ -132,45 +136,21 @@ public class Prj2EPSG extends Application {
                         "Could not initialize Lucene search indexes for keyword search");
             }
         }
-        CRS.cleanupThreadLocals();
+        
+        cleanupThreadLocals();
     }
 
     @Override
     public synchronized void stop() throws Exception {
-        CRS.cleanupThreadLocals();
         super.stop();
+        
+        cleanupThreadLocals();
+        
         try {
             LOGGER.info("Beginning GeoServer cleanup sequence");
 
             // the dreaded classloader
             ClassLoader webappClassLoader = getClass().getClassLoader();
-
-            // unload all of the jdbc drivers we have loaded. We need to store them and unregister
-            // later to avoid concurrent modification exceptions
-            Enumeration<Driver> drivers = DriverManager.getDrivers();
-            Set<Driver> driversToUnload = new HashSet<Driver>();
-            while (drivers.hasMoreElements()) {
-                Driver driver = drivers.nextElement();
-                try {
-                    // the driver class loader can be null if the driver comes from the JDK, such as
-                    // the
-                    // sun.jdbc.odbc.JdbcOdbcDriver
-                    ClassLoader driverClassLoader = driver.getClass().getClassLoader();
-                    if (driverClassLoader != null && webappClassLoader.equals(driverClassLoader)) {
-                        driversToUnload.add(driver);
-                    }
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-            }
-            for (Driver driver : driversToUnload) {
-                try {
-                    DriverManager.deregisterDriver(driver);
-                    LOGGER.info("Unregistered JDBC driver " + driver);
-                } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "Could now unload driver " + driver.getClass(), e);
-                }
-            }
 
             // unload all deferred authority factories so that we get rid of the timer tasks in them
             try {
@@ -276,25 +256,46 @@ public class Prj2EPSG extends Application {
                     }
                 }
             }
+            
+            // unload all of the jdbc drivers we have loaded. We need to store them and unregister
+            // later to avoid concurrent modification exceptions
+            Enumeration<Driver> drivers = DriverManager.getDrivers();
+            Set<Driver> driversToUnload = new HashSet<Driver>();
+            while (drivers.hasMoreElements()) {
+                Driver driver = drivers.nextElement();
+                try {
+                    // the driver class loader can be null if the driver comes from the JDK, such as
+                    // the
+                    // sun.jdbc.odbc.JdbcOdbcDriver
+                    ClassLoader driverClassLoader = driver.getClass().getClassLoader();
+                    if (driverClassLoader != null && webappClassLoader.equals(driverClassLoader)) {
+                        driversToUnload.add(driver);
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
+            for (Driver driver : driversToUnload) {
+                try {
+                    DriverManager.deregisterDriver(driver);
+                    LOGGER.info("Unregistered JDBC driver " + driver);
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Could now unload driver " + driver.getClass(), e);
+                }
+            }
+            
+            GeoTools.exit();
 
             // flush all javabean introspection caches as this too can keep a webapp classloader
             // from being unloaded
             Introspector.flushCaches();
             LOGGER.info("Cleaned up javabean caches");
 
-            // GeoTools have a lot of finalizers and until they are run the JVM
-            // itself wil keepup the class loader...
-            try {
-                System.gc();
-                System.runFinalization();
-                System.gc();
-                System.runFinalization();
-                System.gc();
-                System.runFinalization();
-            } catch (Throwable t) {
-                System.out.println("Failed to perform closing up finalization");
-                t.printStackTrace();
-            }
+            // drop LUCENE index
+            Search.LUCENE_INDEX.close();
+            Search.LUCENE_INDEX = null;
+            
+            LOGGER.info("Full application shutdown complete");
         } catch (Throwable t) {
             // if anything goes south during the cleanup procedures I want to know what it is
             t.printStackTrace();
@@ -316,8 +317,19 @@ public class Prj2EPSG extends Application {
         try {
             super.handle(request, response);
         } finally {
-            CRS.cleanupThreadLocals();
+            cleanupThreadLocals();
         }
+    }
+
+    private void cleanupThreadLocals() {
+        // GeoTools referencing ones
+        CRS.cleanupThreadLocals();
+        
+        // restlet uses thead locals as well
+        Response.setCurrent(null);
+        Application.setCurrent(null);
+        Context.setCurrent(null);
+        HttpResponse.setCurrent(null);
     }
 
 }
