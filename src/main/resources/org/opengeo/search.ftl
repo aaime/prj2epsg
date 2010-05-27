@@ -16,8 +16,8 @@
   <p>${message}</p>
   <#if (codes?size > 0)>
     <ul>
-      <#list codes as code>
-        <li><a href="./epsg/${code}">${code}</a></li>
+      <#list codes as crs>
+        <li><a href="./epsg/${crs.code}">${crs.code} - ${crs.name}</a></li>
       </#list>
     </ul>
   </#if>

@@ -75,20 +75,21 @@ public class Search extends BaseResource {
             // search the results
             Query q = new QueryParser(Version.LUCENE_30, "name", new StandardAnalyzer(
                     Version.LUCENE_30)).parse(terms);
-            int hitsPerPage = 100;
+            int hitsPerPage = 20;
             IndexSearcher searcher = new IndexSearcher(LUCENE_INDEX, true);
             TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage, true);
             searcher.search(q, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
             // accumulate them
-            List<String> codes = new ArrayList<String>();
+            List<Map<String, String>> codes = new ArrayList<Map<String, String>>();
             for (int i = 0; i < hits.length; ++i) {
                 int docId = hits[i].doc;
                 Document d = searcher.doc(docId);
-                codes.add(d.get("code"));
+                String code = d.get("code");
+                codes.add(asCRSMap(code, CRS.decode("EPSG:" + code)));
             }
-            dataModel.put("message", "Found the following EPSG matches");
+            dataModel.put("message", "Found the following EPSG matches (sorted by relevance, " + hits.length + " out of " + collector.getTotalHits() + ")");
             dataModel.put("codes", codes);
         } catch (Exception e) {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
@@ -102,13 +103,20 @@ public class Search extends BaseResource {
             Integer code = CRS.lookupEpsgCode(crs, true);
             if (code != null) {
                 dataModel.put("message", "Found the following EPSG matches");
-                dataModel.put("codes", Arrays.asList(code.toString()));
+                dataModel.put("codes", asCRSMap(String.valueOf(code), crs));
             } else {
                 dataModel.put("message", "Could not find a corresponding EPSG code");
             }
         } catch (FactoryException e) {
             dataModel.put("message", "Invalid WKT syntax: " + e.getMessage());
         }
+    }
+
+    Map<String, String> asCRSMap(String code, CoordinateReferenceSystem crs) {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("code", code);
+        map.put("name", crs.getName().getCode());
+        return map;
     }
 
     @Override
