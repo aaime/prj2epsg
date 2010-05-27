@@ -1,6 +1,6 @@
 <#include "head.ftl">
 
-      <p><big>Prj2EPSG is a simple service for converting projection information from ESRI&apos;s&nbsp;Shapefile format into standard EPSG definitions.</big></p>
+      <p><big>Prj2EPSG is a simple service for converting projection information from ESRI&apos;s&nbsp;"prj" format into standard EPSG codes.</big></p>
       <p>Paste a WKT definition from your .prj file or some keywords and press search:</p>
 
       <form class="input" action="search" method="POST" enctype="multipart/form-data">
