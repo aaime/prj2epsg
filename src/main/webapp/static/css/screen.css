@@ -1,0 +1,140 @@
+/* -------------------------------------------------------------- 
+  
+   Boilerplate Screen Styles
+   * Version:   0.5 (2007-11-19)
+   
+-------------------------------------------------------------- */
+
+@import "lib/reset.css";
+@import "lib/typography.css";
+@import "lib/forms.css";
+@import "lib/plugins.css";
+
+
+/* Site
+-------------------------------------------------------------- */
+
+body {
+  margin: 0;
+  background: #ccc;
+}
+
+a, a:link {
+  color: #3366CC;
+}
+
+a:hover {
+  color: #6C9400;
+}
+
+h2 {
+  margin-bottom: 0.25em;
+}
+
+h3 {
+  margin-bottom: 0.25em;
+}
+
+p big {
+  font-weight: bold;
+}
+
+.container {
+  margin: 0 auto;
+  width: 600px;
+}
+
+.header,
+.content,
+.footer {
+  padding: 1.5em;
+}
+
+
+/* Header */
+
+.header {
+  position: relative;
+  background: #0A2742 url('../img/noise-blue.png');
+  color: #fff;
+}
+
+.header a {
+  color: #fff;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.header h1 a {
+  text-decoration: none;
+}
+
+.header p {
+  position: absolute;
+  top: 2.25em;
+  right: 1.5em;
+}
+
+.header a.logo {
+  display: block;
+  float: right;
+  margin-left: 0.5em;
+  height: 20px;
+  width: 90px;
+  background: url('../img/og_logo.png') no-repeat;
+  color: transparent;
+}
+
+* html .header a.logo {
+zoom: 1;
+behavior: expression((this.runtimeStyle.behavior="none")&&(this.pngSet?this.pngSet=true:(this.nodeName == "IMG" && this.src.toLowerCase().indexOf('.png')>-1?(this.runtimeStyle.backgroundImage = "none",
+this.runtimeStyle.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + this.src + "', sizingMethod='image')",
+this.src = "transparent.gif"):(this.origBg = this.origBg? this.origBg :this.currentStyle.backgroundImage.toString().replace('url("','').replace('")',''),
+this.runtimeStyle.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='" + this.origBg + "', sizingMethod='" + (this.runtimeStyle.backgroundRepeat=='no-repeat' ? 'crop' : 'scale') +"')",
+this.runtimeStyle.backgroundImage = "none")),this.pngSet=true)
+);
+}
+
+/* Content */
+
+.content {
+  background: #fff;
+  border: 1px solid #999;
+}
+
+form.input {
+}
+
+form.input .options {
+  padding: 0.5em;
+  background: #CCC;
+  border: 1px solid #999;
+  border-bottom: none;
+}
+
+textarea {
+  width: 553px;
+  height: 10em;
+  margin: 0 0 1.5em;
+  padding-left: 7px;
+  padding-right: 0;
+  font-size: 12px;
+}
+
+form.input textarea {
+  margin-bottom: 0.5em;
+}
+
+form.input input.button {
+  font-size: 1.25em;
+  font-weight: bold;
+  padding: 0.5em;
+}
+
+
+/* Footer */
+
+.footer {
+}

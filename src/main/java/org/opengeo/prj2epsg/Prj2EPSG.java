@@ -56,12 +56,17 @@ public class Prj2EPSG extends Application {
 
         // the home page
         router.attachDefault(Home.class);
+        // search page
         router.attach("/search.{type}", Search.class).extractQuery("terms", "terms", true)
                 .extractQuery("mode", "mode", true);
         router.attach("/search", Search.class).extractQuery("terms", "terms", true).extractQuery(
                 "mode", "mode", true);
+        // the single epsg code page
         router.attach("/epsg/{code}.{type}", EPSGCode.class);
         router.attach("/epsg/{code}", EPSGCode.class);
+        // static files
+        router.attach("/static", new org.restlet.Directory(getContext(), "war:///static"));
+        
 
         return router;
     }
