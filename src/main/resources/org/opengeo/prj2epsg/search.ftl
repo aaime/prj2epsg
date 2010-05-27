@@ -4,11 +4,7 @@
       <p>Paste a WKT definition from your .prj file or some keywords and press search:</p>
 
       <form class="input" method="get">
-        <div class="options">Search mode:
-          <select name="mode">
-	  	    <option value="wkt" ${selection.wkt}>WKT</option>
-		    <option value="keywords" ${selection.keywords}>Keywords</option>
-          </select> 
+        <div class="options">Search for:
 		</div>
 		<textarea name="terms" cols="60" rows="10"">${terms}</textarea>
 		<input type="submit" value="Search"/>

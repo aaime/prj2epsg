@@ -21,8 +21,16 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.geotools.referencing.CRS;
+import org.opengis.parameter.GeneralParameterValue;
+import org.opengis.parameter.ParameterValue;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.IdentifiedObject;
+import org.opengis.referencing.crs.CompoundCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.crs.ProjectedCRS;
+import org.opengis.referencing.cs.CoordinateSystem;
+import org.opengis.referencing.operation.Projection;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -40,7 +48,7 @@ public class Search extends BaseResource {
     static Directory LUCENE_INDEX;
 
     public enum SearchMode {
-        wkt, keywords
+        wkt, keywords, mixed
     };
 
     public Search(Context context, Request request, Response response) throws ResourceException {
@@ -49,7 +57,7 @@ public class Search extends BaseResource {
         // see if we have to search for a code
         String terms = (String) request.getAttributes().get("terms");
         String modeKey = (String) request.getAttributes().get("mode");
-        SearchMode mode = SearchMode.wkt;
+        SearchMode mode = SearchMode.mixed;
         if (modeKey != null) {
             mode = SearchMode.valueOf(modeKey);
         }
@@ -61,7 +69,9 @@ public class Search extends BaseResource {
         if (terms != null) {
             dataModel.put("showResults", Boolean.TRUE);
             dataModel.put("codes", Collections.emptyList());
-            if (mode == SearchMode.wkt) {
+            if(mode == SearchMode.mixed) {
+                lookupMixed(terms);
+            } if (mode == SearchMode.wkt) {
                 lookupFromWkt(terms);
             } else if (mode == SearchMode.keywords) {
                 lookupFromLucene(terms);
@@ -106,6 +116,67 @@ public class Search extends BaseResource {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
         }
 
+    }
+    
+    private void lookupMixed(String terms) throws ResourceException {
+        try {
+            CoordinateReferenceSystem crs = CRS.parseWKT(terms);
+            Integer code = CRS.lookupEpsgCode(crs, true);
+            if (code != null) {
+                dataModel.put("message", "Found the following EPSG matches");
+                dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
+            } else {
+                // we can parse but we don't get any result -> distill a set of
+                // serch terms from the CRS and use Lucene search
+                String distilledTerms = extractTermsFromCRS(crs);
+                lookupFromLucene(distilledTerms);
+            }
+        } catch (FactoryException e) {
+            // not wkt? let's try treat it as keywords then
+            lookupFromLucene(terms);
+        }
+    }
+
+    /**
+     * Truns the CRS into a set of terms suitable for a keyword search
+     * @param crs
+     * @return
+     */
+    private String extractTermsFromCRS(CoordinateReferenceSystem crs) {
+        StringBuilder sb = new StringBuilder();
+        extractTermsFromIdentifiedObject(crs, sb);
+        return sb.toString();
+    }
+    
+    private void extractTermsFromIdentifiedObject(IdentifiedObject id, StringBuilder sb) {
+        sb.append(id.getName().getCode()).append(" ");
+        if(id instanceof CoordinateReferenceSystem) {
+            CoordinateReferenceSystem crs = (CoordinateReferenceSystem) id;
+            extractTermsFromIdentifiedObject(crs.getCoordinateSystem(), sb);
+            if(crs instanceof ProjectedCRS) {
+                ProjectedCRS pcrs = (ProjectedCRS) crs;
+                extractTermsFromIdentifiedObject(pcrs.getBaseCRS(), sb);
+                extractTermsFromIdentifiedObject(pcrs.getConversionFromBase(), sb);
+            } else if(crs instanceof CompoundCRS) {
+                CompoundCRS ccrs = (CompoundCRS) crs;
+                for(CoordinateReferenceSystem child : ccrs.getCoordinateReferenceSystems()) {
+                    extractTermsFromIdentifiedObject(child, sb);
+                }
+            }
+        } else if(id instanceof Projection) {
+            Projection p = (Projection) id;
+            extractTermsFromIdentifiedObject(p.getMethod(), sb);
+            ParameterValueGroup params = p.getParameterValues();
+            for(GeneralParameterValue gpv : params.values()) {
+                extractTermsFromIdentifiedObject(gpv.getDescriptor(), sb);
+                if(gpv instanceof ParameterValue) {
+                    Object value = ((ParameterValue) gpv).getValue();
+                    if(value != null) {
+                        sb.append(value).append(" ");
+                    } 
+                }
+            }
+        }
     }
 
     private void lookupFromWkt(String terms) {
