@@ -1,3 +1,7 @@
+/* Copyright (c) 2010 Openplans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 3.0 license, available at the root
+ * application directory.
+ */
 package org.opengeo.prj2epsg;
 
 import java.util.ArrayList;
@@ -27,6 +31,10 @@ import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.Variant;
 
+/**
+ * The search/results resource
+ * @author aaime
+ */
 public class Search extends BaseResource {
 
     static Directory LUCENE_INDEX;

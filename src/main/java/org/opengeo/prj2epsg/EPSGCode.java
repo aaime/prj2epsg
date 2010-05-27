@@ -1,3 +1,7 @@
+/* Copyright (c) 2010 Openplans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 3.0 license, available at the root
+ * application directory.
+ */
 package org.opengeo.prj2epsg;
 
 import org.geotools.referencing.CRS;
@@ -9,6 +13,10 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 
+/**
+ * Represents a single EPSG code
+ * @author aaime
+ */
 public class EPSGCode extends BaseResource {
 
     public EPSGCode(Context context, Request request, Response response) {

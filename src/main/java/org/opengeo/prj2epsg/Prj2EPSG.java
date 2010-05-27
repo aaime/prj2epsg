@@ -1,3 +1,7 @@
+/* Copyright (c) 2010 Openplans - www.openplans.org. All rights reserved.
+ * This code is licensed under the GPL 3.0 license, available at the root
+ * application directory.
+ */
 package org.opengeo.prj2epsg;
 
 import java.beans.Introspector;
@@ -46,6 +50,10 @@ import org.restlet.data.Response;
 
 import com.noelios.restlet.http.HttpResponse;
 
+/**
+ * The P4j2EPSG application
+ * @author aaime
+ */
 public class Prj2EPSG extends Application {
 
     static final Logger LOGGER = Logging.getLogger(Prj2EPSG.class);
