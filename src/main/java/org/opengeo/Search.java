@@ -76,7 +76,7 @@ public class Search extends BaseResource {
     private void lookupFromLucene(String terms) throws ResourceException {
         try {
             // search the results
-            Query q = new QueryParser(Version.LUCENE_30, "name", new StandardAnalyzer(
+            Query q = new QueryParser(Version.LUCENE_30, "wkt", new StandardAnalyzer(
                     Version.LUCENE_30)).parse(terms);
             int hitsPerPage = 20;
             IndexSearcher searcher = new IndexSearcher(LUCENE_INDEX, true);
