@@ -27,7 +27,10 @@ public class Prj2EPSG extends Application {
         Router router = new Router(getContext());
 
         // the home page
-        router.attachDefault(Home.class).extractQuery("search", "search", true);
+        router.attachDefault(Home.class);
+        router.attach("/search.{type}", Search.class).extractQuery("terms", "terms", true);
+        router.attach("/search", Search.class).extractQuery("terms", "terms", true);
+        router.attach("/epsg/{code}.{type}", EPSGCode.class);
         router.attach("/epsg/{code}", EPSGCode.class);
 
         return router;
