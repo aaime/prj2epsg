@@ -20,7 +20,7 @@ import org.restlet.resource.Variant;
 import freemarker.template.Configuration;
 
 /**
- * Base class for resources using an HTML represenatation. A Freemarker template with the same name
+ * Base class for resources using an HTML representation. A Freemarker template with the same name
  * of the resource will be used and will be given the contents of the {@link #dataModel} field as
  * data model.
  * 
@@ -39,6 +39,9 @@ public class BaseResource extends Resource {
 
         // grab the type if possible
         type = (String) request.getAttributes().get("type");
+        
+        // set the root
+        dataModel.put("webroot", request.getRootRef().toString());
     }
 
     @Override
@@ -74,6 +77,7 @@ public class BaseResource extends Resource {
             dataModel.remove("showResults");
             dataModel.remove("terms");
             dataModel.remove("message");
+            dataModel.remove("webroot");
             return new Variant(MediaType.APPLICATION_JSON);
         }
 
