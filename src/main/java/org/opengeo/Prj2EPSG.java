@@ -41,6 +41,8 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.Router;
+import org.restlet.data.Request;
+import org.restlet.data.Response;
 
 public class Prj2EPSG extends Application {
 
@@ -130,10 +132,12 @@ public class Prj2EPSG extends Application {
                         "Could not initialize Lucene search indexes for keyword search");
             }
         }
+        CRS.cleanupThreadLocals();
     }
 
     @Override
     public synchronized void stop() throws Exception {
+        CRS.cleanupThreadLocals();
         super.stop();
         try {
             LOGGER.info("Beginning GeoServer cleanup sequence");
@@ -304,6 +308,15 @@ public class Prj2EPSG extends Application {
                 LOGGER.info("Disposing referencing factory " + af);
                 ((AbstractAuthorityFactory) af).dispose();
             }
+        }
+    }
+    
+    @Override
+    public void handle(Request request, Response response) {
+        try {
+            super.handle(request, response);
+        } finally {
+            CRS.cleanupThreadLocals();
         }
     }
 
