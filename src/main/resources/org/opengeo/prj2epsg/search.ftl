@@ -3,8 +3,8 @@
       <p><big>Prj2EPSG is a simple service for converting projection information from ESRI&apos;s&nbsp;Shapefile format into standard EPSG definitions.</big></p>
       <p>Paste a WKT definition from your .prj file or some keywords and press search:</p>
 
-      <form class="input" method="get">
-        <div class="options">Search for:
+      <form class="input" action="search" method="POST" enctype="multipart/form-data">
+        <div class="options">Type search terms or upload a .prj file <input type="file" name="prjfile"/>
 		</div>
 		<textarea name="terms" cols="60" rows="10"">${html_terms}</textarea>
 		<input type="submit" value="Search"/>

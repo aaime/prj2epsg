@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.QueryParser;
@@ -31,9 +34,14 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.crs.ProjectedCRS;
 import org.opengis.referencing.operation.Projection;
 import org.restlet.Context;
+import org.restlet.data.Form;
+import org.restlet.data.MediaType;
+import org.restlet.data.Method;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
+import org.restlet.ext.fileupload.RestletFileUpload;
+import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 
 /**
@@ -42,6 +50,8 @@ import org.restlet.resource.ResourceException;
  */
 public class Search extends BaseResource {
 
+    static final int PRJ_MAX_SIZE_KB = 4;
+    
     static Directory LUCENE_INDEX;
 
     public enum SearchMode {
@@ -50,11 +60,55 @@ public class Search extends BaseResource {
 
     public Search(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
-
-        // see if we have to search for a code
-        String terms = (String) request.getAttributes().get("terms");
-        String modeKey = (String) request.getAttributes().get("mode");
+        
+        String terms = null;
+        String modeKey = null;
         SearchMode mode = SearchMode.mixed;
+
+        // parse the possible different forms, GET, POST and POST with file upload
+        if(Method.GET.equals(request.getMethod())) {
+            // see if we have to search for a code
+            terms = (String) request.getAttributes().get("terms");
+            modeKey = (String) request.getAttributes().get("mode");
+        } else if(Method.POST.equals(request.getMethod())) {
+            if(request.getEntity().getMediaType().equals(MediaType.APPLICATION_WWW_FORM)) {
+                Form form = request.getEntityAsForm();
+                terms = (String) form.getFirstValue("terms");
+                modeKey = (String) form.getFirstValue("mode");
+            } else if(request.getEntity().getMediaType().getName().startsWith(MediaType.MULTIPART_FORM_DATA.getName())) {
+                DiskFileItemFactory factory = new DiskFileItemFactory();
+                factory.setSizeThreshold(PRJ_MAX_SIZE_KB * 1024);
+
+                try {
+                    RestletFileUpload upload = new RestletFileUpload(factory);
+                    String fileContents = null;
+                    for (FileItem item : upload.parseRequest(getRequest())) {
+                        if ("mode".equals(item.getFieldName())) {
+                            modeKey = item.getString();
+                        } else if ("prjfile".equals(item.getFieldName())) {
+                            if (item.getSize() > 64 * 1024) {
+                                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
+                                        "Maximum size for a .prj file is set to " + PRJ_MAX_SIZE_KB + "KB");
+                            }
+                            fileContents = item.getString();
+                        } else if("terms".equals(item.getFieldName())) {
+                            terms = item.getString();
+                        }
+                    }
+                    if(fileContents != null && fileContents.length() > 0) {
+                        terms = fileContents;
+                    }
+                } catch (FileUploadException e) {
+                    throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
+                }
+            } else {
+                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
+            }
+        } else {
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
+        }
+        
+        
         if (modeKey != null) {
             mode = SearchMode.valueOf(modeKey);
         }
@@ -62,20 +116,35 @@ public class Search extends BaseResource {
         dataModel.put("html_showResults", Boolean.FALSE);
         dataModel.put("html_terms", terms != null ? terms : "");
         dataModel.put("exact", Boolean.FALSE);
-
+        
         if (terms != null) {
             dataModel.put("html_showResults", Boolean.TRUE);
             dataModel.put("codes", Collections.emptyList());
             if(mode == SearchMode.mixed) {
                 lookupMixed(terms);
-            } if (mode == SearchMode.wkt) {
+            } else if (mode == SearchMode.wkt) {
                 lookupFromWkt(terms);
             } else if (mode == SearchMode.keywords) {
                 lookupFromLucene(terms);
             }
         }
     }
-
+    
+    @Override
+    public boolean allowPost() {
+        return true;
+    }
+    
+    @Override
+    public void handlePost() {
+        super.handleGet();
+    }
+    
+    @Override
+    public void acceptRepresentation(Representation entity) throws ResourceException {
+        // nothing to do here
+    }
+    
     private void lookupFromLucene(String terms) throws ResourceException {
         try {
             // search the results
@@ -186,4 +255,5 @@ public class Search extends BaseResource {
     }
    
 
+    
 }

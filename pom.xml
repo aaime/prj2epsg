@@ -45,6 +45,16 @@
       <artifactId>com.noelios.restlet.ext.servlet</artifactId>
       <version>${restlet.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.restlet</groupId>
+      <artifactId>org.restlet.ext.fileupload</artifactId>
+      <version>${restlet.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>1.4</version>
+    </dependency>
     
     <!-- Lucene full text search -->
     <dependency>
