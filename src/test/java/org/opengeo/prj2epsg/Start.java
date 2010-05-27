@@ -1,4 +1,4 @@
-package org.opengeo;
+package org.opengeo.prj2epsg;
 
 import java.io.File;
 import java.util.logging.Level;

@@ -1,4 +1,4 @@
-package org.opengeo;
+package org.opengeo.prj2epsg;
 
 import java.beans.Introspector;
 import java.io.File;
@@ -49,7 +49,7 @@ import com.noelios.restlet.http.HttpResponse;
 public class Prj2EPSG extends Application {
 
     static final Logger LOGGER = Logging.getLogger(Prj2EPSG.class);
-
+    
     @Override
     public Restlet createRoot() {
         Router router = new Router(getContext());

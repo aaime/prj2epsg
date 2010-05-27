@@ -1,4 +1,4 @@
-package org.opengeo;
+package org.opengeo.prj2epsg;
 
 import org.geotools.referencing.CRS;
 import org.opengis.referencing.FactoryException;

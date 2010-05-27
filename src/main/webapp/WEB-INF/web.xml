@@ -8,7 +8,7 @@
 	<!-- Application class name -->
 	<context-param>
 		<param-name>org.restlet.application</param-name>
-		<param-value>org.opengeo.Prj2EPSG</param-value>
+		<param-value>org.opengeo.prj2epsg.Prj2EPSG</param-value>
 	</context-param>
 
 	<!-- Restlet adapter -->
