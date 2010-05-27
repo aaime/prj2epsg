@@ -5,8 +5,8 @@
 <form method="get">
   Search mode: 
   <select name="mode">
-    <option value="wkt" selected="${selection.wkt}">WKT</option>
-    <option value="keywords" selected="${selection.keywords}">Keywords</option>
+    <option value="wkt" ${selection.wkt}>WKT</option>
+    <option value="keywords" ${selection.keywords}>Keywords</option>
   </select><br/>
   <textarea name="terms" cols=120 rows=20>${terms}</textarea><br/>
   <input type="submit" value="Search"/>
@@ -17,7 +17,7 @@
   <#if (codes?size > 0)>
     <ul>
       <#list codes as crs>
-        <li><a href="./epsg/${crs.code}">${crs.code} - ${crs.name}</a></li>
+        <li><a href="./epsg/${crs.code}">${crs.code}</a> - ${crs.name}</li>
       </#list>
     </ul>
   </#if>

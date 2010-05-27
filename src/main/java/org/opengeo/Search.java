@@ -53,7 +53,6 @@ public class Search extends BaseResource {
         if (terms != null) {
             dataModel.put("showResults", Boolean.TRUE);
             dataModel.put("codes", Collections.emptyList());
-            List<String> codes;
             if (mode == SearchMode.wkt) {
                 lookupFromWkt(terms);
             } else if (mode == SearchMode.keywords) {
@@ -65,7 +64,11 @@ public class Search extends BaseResource {
     private Map<String, String> buildSelectionMap(SearchMode mode) {
         Map<String, String> selection = new HashMap<String, String>();
         for(SearchMode sm : SearchMode.values()) {
-           selection.put(sm.name(), String.valueOf(sm == mode));
+           if(sm == mode) { 
+               selection.put(sm.name(), "selected=\"selected\"");
+           } else {
+               selection.put(sm.name(), "");
+           }
         }
         return selection;
     }
@@ -103,7 +106,7 @@ public class Search extends BaseResource {
             Integer code = CRS.lookupEpsgCode(crs, true);
             if (code != null) {
                 dataModel.put("message", "Found the following EPSG matches");
-                dataModel.put("codes", asCRSMap(String.valueOf(code), crs));
+                dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
             } else {
                 dataModel.put("message", "Could not find a corresponding EPSG code");
             }
