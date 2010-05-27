@@ -41,7 +41,6 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.ext.fileupload.RestletFileUpload;
-import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 
 /**
@@ -55,7 +54,7 @@ public class Search extends BaseResource {
     static Directory LUCENE_INDEX;
 
     public enum SearchMode {
-        wkt, keywords, mixed
+        wkt, keywords, auto
     };
 
     public Search(Context context, Request request, Response response) throws ResourceException {
@@ -63,7 +62,7 @@ public class Search extends BaseResource {
         
         String terms = null;
         String modeKey = null;
-        SearchMode mode = SearchMode.mixed;
+        SearchMode mode = SearchMode.auto;
 
         // parse the possible different forms, GET, POST and POST with file upload
         if(Method.GET.equals(request.getMethod())) {
@@ -108,20 +107,20 @@ public class Search extends BaseResource {
             throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
         }
         
-        
-        if (modeKey != null) {
-            mode = SearchMode.valueOf(modeKey);
-        }
-
+        // common values for the data model
         dataModel.put("html_showResults", Boolean.FALSE);
         dataModel.put("html_terms", terms != null ? terms : "");
         dataModel.put("exact", Boolean.FALSE);
-        
+
+        // actually perform the search
+        if (modeKey != null) {
+            mode = SearchMode.valueOf(modeKey);
+        }
         if (terms != null) {
             dataModel.put("html_showResults", Boolean.TRUE);
             dataModel.put("codes", Collections.emptyList());
-            if(mode == SearchMode.mixed) {
-                lookupMixed(terms);
+            if(mode == SearchMode.auto) {
+                lookupAuto(terms);
             } else if (mode == SearchMode.wkt) {
                 lookupFromWkt(terms);
             } else if (mode == SearchMode.keywords) {
@@ -140,10 +139,7 @@ public class Search extends BaseResource {
         super.handleGet();
     }
     
-    @Override
-    public void acceptRepresentation(Representation entity) throws ResourceException {
-        // nothing to do here
-    }
+    
     
     private void lookupFromLucene(String terms) throws ResourceException {
         try {
@@ -172,19 +168,15 @@ public class Search extends BaseResource {
 
     }
     
-    private void lookupMixed(String terms) throws ResourceException {
+    /**
+     * Tries to lookup as WKT, if that does not work, use a keyword based approach
+     * @param terms
+     * @throws ResourceException
+     */
+    private void lookupAuto(String terms) throws ResourceException {
         try {
             CoordinateReferenceSystem crs = CRS.parseWKT(terms);
-            Integer code = CRS.lookupEpsgCode(crs, true);
-            if (code != null) {
-                dataModel.put("exact", Boolean.TRUE);
-                dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
-            } else {
-                // we can parse but we don't get any result -> distill a set of
-                // serch terms from the CRS and use Lucene search
-                String distilledTerms = extractTermsFromCRS(crs);
-                lookupFromLucene(distilledTerms);
-            }
+            lookupFromWkt(terms);
         } catch (FactoryException e) {
             // not wkt? let's try treat it as keywords then
             lookupFromLucene(terms);
@@ -233,13 +225,18 @@ public class Search extends BaseResource {
         }
     }
 
-    private void lookupFromWkt(String terms) {
+    private void lookupFromWkt(String terms) throws ResourceException {
         try {
             CoordinateReferenceSystem crs = CRS.parseWKT(terms);
             Integer code = CRS.lookupEpsgCode(crs, true);
             if (code != null) {
                 dataModel.put("exact", Boolean.TRUE);
                 dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
+            } else {
+                // we can parse but we don't get any result -> distill a set of
+                // serch terms from the CRS and use Lucene search
+                String distilledTerms = extractTermsFromCRS(crs);
+                lookupFromLucene(distilledTerms);
             } 
         } catch (FactoryException e) {
             dataModel.put("errors", "Invalid WKT syntax: " + e.getMessage());
@@ -250,7 +247,7 @@ public class Search extends BaseResource {
         Map<String, String> map = new HashMap<String, String>();
         map.put("code", code);
         map.put("name", crs.getName().getCode());
-        map.put("url", getRequest().getRootRef().toString() + "/" + "epsg/" + code);
+        map.put("url", getRequest().getRootRef().toString() + "/" + "epsg/" + code + ".json");
         return map;
     }
    
