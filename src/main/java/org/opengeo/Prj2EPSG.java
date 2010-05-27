@@ -1,10 +1,24 @@
 package org.opengeo;
 
+import java.beans.Introspector;
 import java.io.File;
 import java.io.IOException;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.imageio.spi.IIORegistry;
+import javax.imageio.spi.IIOServiceProvider;
+import javax.media.jai.JAI;
+import javax.media.jai.OperationRegistry;
+import javax.media.jai.RegistryElementDescriptor;
+import javax.media.jai.RegistryMode;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -15,8 +29,14 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 import org.geotools.factory.Hints;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.ReferencingFactoryFinder;
+import org.geotools.referencing.factory.AbstractAuthorityFactory;
+import org.geotools.referencing.factory.DeferredAuthorityFactory;
 import org.geotools.referencing.factory.epsg.ThreadedHsqlEpsgFactory;
+import org.geotools.util.WeakCollectionCleaner;
 import org.geotools.util.logging.Logging;
+import org.opengis.referencing.AuthorityFactory;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.restlet.Application;
 import org.restlet.Restlet;
@@ -26,7 +46,26 @@ public class Prj2EPSG extends Application {
 
     static final Logger LOGGER = Logging.getLogger(Prj2EPSG.class);
 
-    public Prj2EPSG() {
+    @Override
+    public Restlet createRoot() {
+        Router router = new Router(getContext());
+
+        // the home page
+        router.attachDefault(Home.class);
+        router.attach("/search.{type}", Search.class).extractQuery("terms", "terms", true)
+                .extractQuery("mode", "mode", true);
+        router.attach("/search", Search.class).extractQuery("terms", "terms", true).extractQuery(
+                "mode", "mode", true);
+        router.attach("/epsg/{code}.{type}", EPSGCode.class);
+        router.attach("/epsg/{code}", EPSGCode.class);
+
+        return router;
+    }
+
+    @Override
+    public synchronized void start() throws Exception {
+        super.start();
+        
         // basic referencing setups
         System.setProperty("org.geotools.referencing.forceXY", "true");
         Hints.putSystemDefault(Hints.FORCE_AXIS_ORDER_HONORING, "http");
@@ -51,10 +90,10 @@ public class Prj2EPSG extends Application {
             try {
                 Directory index = new SimpleFSDirectory(directory);
                 File sentinel = new File(directory, "created.txt");
-                
-                if(!sentinel.exists()) {
+
+                if (!sentinel.exists()) {
                     LOGGER.info("Creating Lucene keywords search index");
-                    
+
                     // write out the index
                     IndexWriter w = new IndexWriter(index, analyzer, true,
                             IndexWriter.MaxFieldLength.UNLIMITED);
@@ -80,9 +119,9 @@ public class Prj2EPSG extends Application {
                         }
                     }
                     w.close();
-                    
+
                     sentinel.createNewFile();
-                    
+
                     LOGGER.info("Lucene keywords search index successfully created");
                 }
                 Search.LUCENE_INDEX = index;
@@ -94,16 +133,178 @@ public class Prj2EPSG extends Application {
     }
 
     @Override
-    public Restlet createRoot() {
-        Router router = new Router(getContext());
+    public synchronized void stop() throws Exception {
+        super.stop();
+        try {
+            LOGGER.info("Beginning GeoServer cleanup sequence");
 
-        // the home page
-        router.attachDefault(Home.class);
-        router.attach("/search.{type}", Search.class).extractQuery("terms", "terms", true).extractQuery("mode", "mode", true);
-        router.attach("/search", Search.class).extractQuery("terms", "terms", true).extractQuery("mode", "mode", true);
-        router.attach("/epsg/{code}.{type}", EPSGCode.class);
-        router.attach("/epsg/{code}", EPSGCode.class);
+            // the dreaded classloader
+            ClassLoader webappClassLoader = getClass().getClassLoader();
 
-        return router;
+            // unload all of the jdbc drivers we have loaded. We need to store them and unregister
+            // later to avoid concurrent modification exceptions
+            Enumeration<Driver> drivers = DriverManager.getDrivers();
+            Set<Driver> driversToUnload = new HashSet<Driver>();
+            while (drivers.hasMoreElements()) {
+                Driver driver = drivers.nextElement();
+                try {
+                    // the driver class loader can be null if the driver comes from the JDK, such as
+                    // the
+                    // sun.jdbc.odbc.JdbcOdbcDriver
+                    ClassLoader driverClassLoader = driver.getClass().getClassLoader();
+                    if (driverClassLoader != null && webappClassLoader.equals(driverClassLoader)) {
+                        driversToUnload.add(driver);
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
+            for (Driver driver : driversToUnload) {
+                try {
+                    DriverManager.deregisterDriver(driver);
+                    LOGGER.info("Unregistered JDBC driver " + driver);
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Could now unload driver " + driver.getClass(), e);
+                }
+            }
+
+            // unload all deferred authority factories so that we get rid of the timer tasks in them
+            try {
+                disposeAuthorityFactories(ReferencingFactoryFinder
+                        .getCoordinateOperationAuthorityFactories(null));
+            } catch (Throwable e) {
+                LOGGER
+                        .log(Level.WARNING, "Error occurred trying to dispose authority factories",
+                                e);
+            }
+            try {
+                disposeAuthorityFactories(ReferencingFactoryFinder.getCRSAuthorityFactories(null));
+            } catch (Throwable e) {
+                LOGGER
+                        .log(Level.WARNING, "Error occurred trying to dispose authority factories",
+                                e);
+            }
+            try {
+                disposeAuthorityFactories(ReferencingFactoryFinder.getCSAuthorityFactories(null));
+            } catch (Throwable e) {
+                LOGGER
+                        .log(Level.WARNING, "Error occurred trying to dispose authority factories",
+                                e);
+            }
+
+            // kill the threads created by referencing
+            WeakCollectionCleaner.DEFAULT.exit();
+            DeferredAuthorityFactory.exit();
+            CRS.reset("all");
+            LOGGER.info("Shut down GT referencing threads ");
+            // reset
+            ReferencingFactoryFinder.reset();
+            // CommonFactoryFinder.reset();
+            // DataStoreFinder.reset();
+            // DataAccessFinder.reset();
+            LOGGER.info("Shut down GT  SPI ");
+
+            // unload everything that JAI ImageIO can still refer to
+            // We need to store them and unregister later to avoid concurrent modification
+            // exceptions
+            final IIORegistry ioRegistry = IIORegistry.getDefaultInstance();
+            Set<IIOServiceProvider> providersToUnload = new HashSet();
+            for (Iterator<Class<?>> cats = ioRegistry.getCategories(); cats.hasNext();) {
+                Class<?> category = cats.next();
+                for (Iterator it = ioRegistry.getServiceProviders(category, false); it.hasNext();) {
+                    final IIOServiceProvider provider = (IIOServiceProvider) it.next();
+                    if (webappClassLoader.equals(provider.getClass().getClassLoader())) {
+                        providersToUnload.add(provider);
+                    }
+                }
+            }
+            for (IIOServiceProvider provider : providersToUnload) {
+                ioRegistry.deregisterServiceProvider(provider);
+                LOGGER.info("Unregistering Image I/O provider " + provider);
+            }
+
+            // unload everything that JAI can still refer to
+            final OperationRegistry opRegistry = JAI.getDefaultInstance().getOperationRegistry();
+            for (String mode : RegistryMode.getModeNames()) {
+                for (Iterator descriptors = opRegistry.getDescriptors(mode).iterator(); descriptors != null
+                        && descriptors.hasNext();) {
+                    RegistryElementDescriptor red = (RegistryElementDescriptor) descriptors.next();
+                    int factoryCount = 0;
+                    int unregisteredCount = 0;
+                    // look for all the factories for that operation
+                    for (Iterator factories = opRegistry.getFactoryIterator(mode, red.getName()); factories != null
+                            && factories.hasNext();) {
+                        Object factory = factories.next();
+                        if (factory == null) {
+                            continue;
+                        }
+                        factoryCount++;
+                        if (webappClassLoader.equals(factory.getClass().getClassLoader())) {
+                            boolean unregistered = false;
+                            // we need to scan against all "products" to unregister the factory
+                            Vector orderedProductList = opRegistry.getOrderedProductList(mode, red
+                                    .getName());
+                            if (orderedProductList != null) {
+                                for (Iterator products = orderedProductList.iterator(); products != null
+                                        && products.hasNext();) {
+                                    String product = (String) products.next();
+                                    try {
+                                        opRegistry.unregisterFactory(mode, red.getName(), product,
+                                                factory);
+                                        LOGGER.info("Unregistering JAI factory "
+                                                + factory.getClass());
+                                    } catch (Throwable t) {
+                                        // may fail due to the factory not being registered against
+                                        // that product
+                                    }
+                                }
+                            }
+                            if (unregistered) {
+                                unregisteredCount++;
+                            }
+
+                        }
+                    }
+
+                    // if all the factories were unregistered, get rid of the descriptor as well
+                    if (factoryCount > 0 && unregisteredCount == factoryCount) {
+                        opRegistry.unregisterDescriptor(red);
+                    }
+                }
+            }
+
+            // flush all javabean introspection caches as this too can keep a webapp classloader
+            // from being unloaded
+            Introspector.flushCaches();
+            LOGGER.info("Cleaned up javabean caches");
+
+            // GeoTools have a lot of finalizers and until they are run the JVM
+            // itself wil keepup the class loader...
+            try {
+                System.gc();
+                System.runFinalization();
+                System.gc();
+                System.runFinalization();
+                System.gc();
+                System.runFinalization();
+            } catch (Throwable t) {
+                System.out.println("Failed to perform closing up finalization");
+                t.printStackTrace();
+            }
+        } catch (Throwable t) {
+            // if anything goes south during the cleanup procedures I want to know what it is
+            t.printStackTrace();
+        }
     }
+
+    private void disposeAuthorityFactories(Set<? extends AuthorityFactory> factories)
+            throws FactoryException {
+        for (AuthorityFactory af : factories) {
+            if (af instanceof AbstractAuthorityFactory) {
+                LOGGER.info("Disposing referencing factory " + af);
+                ((AbstractAuthorityFactory) af).dispose();
+            }
+        }
+    }
+
 }

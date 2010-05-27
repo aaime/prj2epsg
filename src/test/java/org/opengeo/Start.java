@@ -30,6 +30,9 @@ public class Start {
             wah.setTempDirectory(new File("target/work"));
 
             jettyServer.start();
+            
+            System.in.read();
+            jettyServer.stop();
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Could not start the Jetty server: " + e.getMessage(), e);
 
