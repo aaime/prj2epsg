@@ -27,7 +27,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
-import org.geotools.factory.GeoTools;
 import org.geotools.factory.Hints;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
@@ -45,7 +44,6 @@ import org.restlet.Router;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 
-import com.noelios.restlet.component.ChildContext;
 import com.noelios.restlet.http.HttpResponse;
 
 public class Prj2EPSG extends Application {
@@ -284,7 +282,7 @@ public class Prj2EPSG extends Application {
                 }
             }
             
-            GeoTools.exit();
+            // GeoTools.exit();
 
             // flush all javabean introspection caches as this too can keep a webapp classloader
             // from being unloaded
