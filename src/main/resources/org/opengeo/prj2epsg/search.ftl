@@ -16,7 +16,7 @@
           <#if exact == true>
           <p>Found a single exact match for the specified search terms:
           <#else>
-          <p>Found the following EPSG matches (sorted by relevance, ${codes?size} out of " ${totalHits}</p>
+          <p>Found the following EPSG matches (sorted by relevance, ${codes?size} out of ${totalHits})</p>
           </#if>
           
           <ul>
