@@ -1,8 +1,13 @@
 <#include "head.ftl">
 
 <h1>Prj2EPSG</h1>
-<p>Paste a WKT definition of the coordinate reference system you're looking for and press search:</p>
+<p>Paste a WKT definition of the coordinate reference system you're looking for, or some keyworkds, and press search:</p>
 <form method="get">
+  Search mode: 
+  <select name="mode">
+    <option value="wkt" selected="${selection.wkt}">WKT</option>
+    <option value="keywords" selected="${selection.keywords}">Keywords</option>
+  </select><br/>
   <textarea name="terms" cols=120 rows=20>${terms}</textarea><br/>
   <input type="submit" value="Search"/>
 </form>
