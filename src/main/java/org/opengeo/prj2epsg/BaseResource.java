@@ -4,6 +4,7 @@
  */
 package org.opengeo.prj2epsg;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -28,6 +29,9 @@ import freemarker.template.Configuration;
  * of the resource will be used and will be given the contents of the {@link #dataModel} field as
  * data model.
  * 
+ * Subclasses are supposed to populate the data model. If you want a key to be available to 
+ * HTML templates but not included in JSON outputs just prefix it with "html_"
+ * 
  * @author Andrea Aime - OpenGeo
  * 
  */
@@ -45,7 +49,7 @@ public class BaseResource extends Resource {
         type = (String) request.getAttributes().get("type");
         
         // set the root
-        dataModel.put("webroot", request.getRootRef().toString());
+        dataModel.put("html_webroot", request.getRootRef().toString());
     }
 
     @Override
@@ -78,10 +82,11 @@ public class BaseResource extends Resource {
         if (type == null || "html".equals(type)) {
             return new Variant(MediaType.TEXT_HTML);
         } else if ("json".equals(type)) {
-            dataModel.remove("showResults");
-            dataModel.remove("terms");
-            dataModel.remove("message");
-            dataModel.remove("webroot");
+            for (String key : new HashSet<String>(dataModel.keySet())) {
+                if(key.startsWith("html_")) {
+                    dataModel.remove(key);
+                }
+            }
             return new Variant(MediaType.APPLICATION_JSON);
         }
 

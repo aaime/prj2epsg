@@ -29,15 +29,12 @@ import org.opengis.referencing.IdentifiedObject;
 import org.opengis.referencing.crs.CompoundCRS;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.crs.ProjectedCRS;
-import org.opengis.referencing.cs.CoordinateSystem;
 import org.opengis.referencing.operation.Projection;
 import org.restlet.Context;
-import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
-import org.restlet.resource.Variant;
 
 /**
  * The search/results resource
@@ -62,12 +59,12 @@ public class Search extends BaseResource {
             mode = SearchMode.valueOf(modeKey);
         }
 
-        dataModel.put("showResults", Boolean.FALSE);
-        dataModel.put("terms", terms != null ? terms : "");
-        dataModel.put("selection", buildSelectionMap(mode));
+        dataModel.put("html_showResults", Boolean.FALSE);
+        dataModel.put("html_terms", terms != null ? terms : "");
+        dataModel.put("exact", Boolean.FALSE);
 
         if (terms != null) {
-            dataModel.put("showResults", Boolean.TRUE);
+            dataModel.put("html_showResults", Boolean.TRUE);
             dataModel.put("codes", Collections.emptyList());
             if(mode == SearchMode.mixed) {
                 lookupMixed(terms);
@@ -77,18 +74,6 @@ public class Search extends BaseResource {
                 lookupFromLucene(terms);
             }
         }
-    }
-
-    private Map<String, String> buildSelectionMap(SearchMode mode) {
-        Map<String, String> selection = new HashMap<String, String>();
-        for(SearchMode sm : SearchMode.values()) {
-           if(sm == mode) { 
-               selection.put(sm.name(), "selected=\"selected\"");
-           } else {
-               selection.put(sm.name(), "");
-           }
-        }
-        return selection;
     }
 
     private void lookupFromLucene(String terms) throws ResourceException {
@@ -110,7 +95,7 @@ public class Search extends BaseResource {
                 String code = d.get("code");
                 codes.add(asCRSMap(code, CRS.decode("EPSG:" + code)));
             }
-            dataModel.put("message", "Found the following EPSG matches (sorted by relevance, " + hits.length + " out of " + collector.getTotalHits() + ")");
+            dataModel.put("totalHits", collector.getTotalHits());
             dataModel.put("codes", codes);
         } catch (Exception e) {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
@@ -123,7 +108,7 @@ public class Search extends BaseResource {
             CoordinateReferenceSystem crs = CRS.parseWKT(terms);
             Integer code = CRS.lookupEpsgCode(crs, true);
             if (code != null) {
-                dataModel.put("message", "Found the following EPSG matches");
+                dataModel.put("exact", Boolean.TRUE);
                 dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
             } else {
                 // we can parse but we don't get any result -> distill a set of
@@ -184,13 +169,11 @@ public class Search extends BaseResource {
             CoordinateReferenceSystem crs = CRS.parseWKT(terms);
             Integer code = CRS.lookupEpsgCode(crs, true);
             if (code != null) {
-                dataModel.put("message", "Found the following EPSG matches");
+                dataModel.put("exact", Boolean.TRUE);
                 dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
-            } else {
-                dataModel.put("message", "Could not find a corresponding EPSG code");
-            }
+            } 
         } catch (FactoryException e) {
-            dataModel.put("message", "Invalid WKT syntax: " + e.getMessage());
+            dataModel.put("errors", "Invalid WKT syntax: " + e.getMessage());
         }
     }
 
@@ -198,20 +181,9 @@ public class Search extends BaseResource {
         Map<String, String> map = new HashMap<String, String>();
         map.put("code", code);
         map.put("name", crs.getName().getCode());
+        map.put("url", getRequest().getRootRef().toString() + "/" + "epsg/" + code);
         return map;
     }
-
-    @Override
-    public Variant getPreferredVariant() {
-        if ("json".equals(type)) {
-            dataModel.remove("showResults");
-            dataModel.remove("terms");
-            dataModel.remove("message");
-            dataModel.remove("selection");
-            return new Variant(MediaType.APPLICATION_JSON);
-        }
-
-        return super.getPreferredVariant();
-    }
+   
 
 }
