@@ -7,7 +7,7 @@
 		</div>
 		<textarea id="terms" name="terms" cols="60" rows="10"">${html_terms}</textarea>
 		<p>or <label for="prjfile">upload a .prj file</label>: <input type="file" id="prjfile" name="prjfile"/></p>
-		<input type="submit" value="Search"/>
+		<input type="submit" value="Convert"/>
       </form>
    
       <#if html_showResults == true>
