@@ -27,6 +27,10 @@ a:hover {
   color: #6C9400;
 }
 
+abbr, acronym {
+  border: none;
+}
+
 h2 {
   margin-bottom: 0.25em;
 }
@@ -42,6 +46,7 @@ p big {
 .container {
   margin: 0 auto;
   width: 600px;
+  overflow: hidden;
 }
 
 .header,
@@ -105,6 +110,7 @@ this.runtimeStyle.backgroundImage = "none")),this.pngSet=true)
 }
 
 form.input {
+  margin-bottom: 1.5em;
 }
 
 form.input .options {
