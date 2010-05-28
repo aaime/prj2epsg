@@ -72,6 +72,8 @@ public class Prj2EPSG extends Application {
         // the single epsg code page
         router.attach("/epsg/{code}.{type}", EPSGCode.class);
         router.attach("/epsg/{code}", EPSGCode.class);
+        // the interactive api documentation
+        router.attach("/apidocs.html", APIDocs.class);
         // static files
         router.attach("/static", new org.restlet.Directory(getContext(), "war:///static"));
         
