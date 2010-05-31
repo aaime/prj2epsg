@@ -41,7 +41,9 @@ import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.ext.fileupload.RestletFileUpload;
+import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
+import org.restlet.resource.Variant;
 
 /**
  * The search/results resource
@@ -59,74 +61,6 @@ public class Search extends BaseResource {
 
     public Search(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
-        
-        String terms = null;
-        String modeKey = null;
-        SearchMode mode = SearchMode.auto;
-
-        // parse the possible different forms, GET, POST and POST with file upload
-        if(Method.GET.equals(request.getMethod())) {
-            // see if we have to search for a code
-            terms = (String) request.getAttributes().get("terms");
-            modeKey = (String) request.getAttributes().get("mode");
-        } else if(Method.POST.equals(request.getMethod())) {
-            if(request.getEntity().getMediaType().equals(MediaType.APPLICATION_WWW_FORM)) {
-                Form form = request.getEntityAsForm();
-                terms = (String) form.getFirstValue("terms");
-                modeKey = (String) form.getFirstValue("mode");
-            } else if(request.getEntity().getMediaType().getName().startsWith(MediaType.MULTIPART_FORM_DATA.getName())) {
-                DiskFileItemFactory factory = new DiskFileItemFactory();
-                factory.setSizeThreshold(PRJ_MAX_SIZE_KB * 1024);
-
-                try {
-                    RestletFileUpload upload = new RestletFileUpload(factory);
-                    String fileContents = null;
-                    for (FileItem item : upload.parseRequest(getRequest())) {
-                        if ("mode".equals(item.getFieldName())) {
-                            modeKey = item.getString();
-                        } else if ("prjfile".equals(item.getFieldName())) {
-                            if (item.getSize() > 64 * 1024) {
-                                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
-                                        "Maximum size for a .prj file is set to " + PRJ_MAX_SIZE_KB + "KB");
-                            }
-                            fileContents = item.getString();
-                        } else if("terms".equals(item.getFieldName())) {
-                            terms = item.getString();
-                        }
-                    }
-                    if(fileContents != null && fileContents.length() > 0) {
-                        terms = fileContents;
-                    }
-                } catch (FileUploadException e) {
-                    throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
-                }
-            } else {
-                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
-            }
-        } else {
-            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
-        }
-        
-        // common values for the data model
-        dataModel.put("html_showResults", Boolean.FALSE);
-        dataModel.put("html_terms", terms != null ? terms : "");
-        dataModel.put("exact", Boolean.FALSE);
-
-        // actually perform the search
-        if (modeKey != null) {
-            mode = SearchMode.valueOf(modeKey);
-        }
-        if (terms != null) {
-            dataModel.put("html_showResults", Boolean.TRUE);
-            dataModel.put("codes", Collections.emptyList());
-            if(mode == SearchMode.auto) {
-                lookupAuto(terms);
-            } else if (mode == SearchMode.wkt) {
-                lookupFromWkt(terms);
-            } else if (mode == SearchMode.keywords) {
-                lookupFromLucene(terms);
-            }
-        }
     }
     
     @Override
@@ -138,8 +72,6 @@ public class Search extends BaseResource {
     public void handlePost() {
         super.handleGet();
     }
-    
-    
     
     private void lookupFromLucene(String terms) throws ResourceException {
         try {
@@ -178,7 +110,17 @@ public class Search extends BaseResource {
             CoordinateReferenceSystem crs = CRS.parseWKT(terms);
             lookupFromWkt(terms);
         } catch (FactoryException e) {
-            // not wkt? let's try treat it as keywords then
+            // failed to parse as WKT. This might also mean the thing is a WKT, but with
+            // some parameters GT2 cannot parse. If it is, Lucene won't be happy either with it,
+            // so let's check and cleanup a bit the search string.
+            
+            String start = terms.trim().substring(0, 10).toUpperCase();
+            if(start.startsWith("PROJCS") || start.startsWith("GEOGCS") || start.startsWith("COMPD_CS")) {
+                // remove parenthesis and common terms
+                String cleaned = terms.replaceAll("(COMPD_CS|PROJCS|GEOGCS|DATUM|SPHEROID|TOWGS84|AUTHORITY|PRIMEM|UNIT|AXIS|AUTHORITY|PARAMETER|PROJECTION|VERT_CS|[\\[\\],\\n\\r]+)", " ");
+                terms = cleaned;
+            }
+            
             lookupFromLucene(terms);
         }
     }
@@ -252,5 +194,88 @@ public class Search extends BaseResource {
     }
    
 
+    @Override
+    public Representation represent(Variant variant) throws ResourceException {
+        String terms = null;
+        String modeKey = null;
+        SearchMode mode = SearchMode.auto;
+        
+        Request request = getRequest();
+
+        // parse the possible different forms, GET, POST and POST with file upload
+        if(Method.GET.equals(request.getMethod())) {
+            // see if we have to search for a code
+            terms = (String) request.getAttributes().get("terms");
+            modeKey = (String) request.getAttributes().get("mode");
+        } else if(Method.POST.equals(request.getMethod())) {
+            if(request.getEntity().getMediaType().equals(MediaType.APPLICATION_WWW_FORM)) {
+                Form form = request.getEntityAsForm();
+                terms = (String) form.getFirstValue("terms");
+                modeKey = (String) form.getFirstValue("mode");
+            } else if(request.getEntity().getMediaType().getName().startsWith(MediaType.MULTIPART_FORM_DATA.getName())) {
+                DiskFileItemFactory factory = new DiskFileItemFactory();
+                factory.setSizeThreshold(PRJ_MAX_SIZE_KB * 1024);
+
+                try {
+                    RestletFileUpload upload = new RestletFileUpload(factory);
+                    String fileContents = null;
+                    for (FileItem item : upload.parseRequest(getRequest())) {
+                        if ("mode".equals(item.getFieldName())) {
+                            modeKey = item.getString();
+                        } else if ("prjfile".equals(item.getFieldName())) {
+                            if (item.getSize() > 64 * 1024) {
+                                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST,
+                                        "Maximum size for a .prj file is set to " + PRJ_MAX_SIZE_KB + "KB");
+                            }
+                            fileContents = item.getString();
+                        } else if("terms".equals(item.getFieldName())) {
+                            terms = item.getString();
+                        }
+                    }
+                    if(fileContents != null && fileContents.length() > 0) {
+                        terms = fileContents;
+                    }
+                } catch (FileUploadException e) {
+                    throw new ResourceException(Status.SERVER_ERROR_INTERNAL, e);
+                }
+            } else {
+                throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
+            }
+        } else {
+            throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
+        }
+        
+        // common values for the data model
+        dataModel.put("html_showResults", Boolean.FALSE);
+        dataModel.put("html_terms", terms != null ? terms : "");
+        dataModel.put("exact", Boolean.FALSE);
+
+        // actually perform the search
+        if (modeKey != null) {
+            mode = SearchMode.valueOf(modeKey);
+        }
+        try {
+            if (terms != null) {
+                dataModel.put("html_showResults", Boolean.TRUE);
+                dataModel.put("codes", Collections.emptyList());
+                if(mode == SearchMode.auto) {
+                    lookupAuto(terms);
+                } else if (mode == SearchMode.wkt) {
+                    lookupFromWkt(terms);
+                } else if (mode == SearchMode.keywords) {
+                    lookupFromLucene(terms);
+                }
+            }
+        } catch(Throwable t) {
+            if(t instanceof ResourceException) {
+                throw (ResourceException) t;
+            } else {
+                throw new ResourceException(Status.SERVER_ERROR_INTERNAL, t.getMessage(), t);
+            }
+        }
+        
+        
+        return super.represent(variant);
+    }
     
 }
