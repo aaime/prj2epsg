@@ -10,7 +10,7 @@
 </ul>
 
 <strong>WKT representation:</strong>
-<textarea>
+<textarea readonly="true">
 ${wkt}
 </textarea>
 

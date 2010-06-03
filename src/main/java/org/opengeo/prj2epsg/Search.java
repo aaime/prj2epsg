@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
@@ -114,11 +115,13 @@ public class Search extends BaseResource {
             // some parameters GT2 cannot parse. If it is, Lucene won't be happy either with it,
             // so let's check and cleanup a bit the search string.
             
-            String start = terms.trim().substring(0, 10).toUpperCase();
-            if(start.startsWith("PROJCS") || start.startsWith("GEOGCS") || start.startsWith("COMPD_CS")) {
-                // remove parenthesis and common terms
-                String cleaned = terms.replaceAll("(COMPD_CS|PROJCS|GEOGCS|DATUM|SPHEROID|TOWGS84|AUTHORITY|PRIMEM|UNIT|AXIS|AUTHORITY|PARAMETER|PROJECTION|VERT_CS|[\\[\\],\\n\\r]+)", " ");
-                terms = cleaned;
+            if(terms.length() > 7) {
+                String start = terms.trim().substring(0, 7).toUpperCase();
+                if(start.startsWith("PROJCS") || start.startsWith("GEOGCS") || start.startsWith("COMPD_CS")) {
+                    // remove parenthesis and common terms
+                    String cleaned = terms.replaceAll("(COMPD_CS|PROJCS|GEOGCS|DATUM|SPHEROID|TOWGS84|AUTHORITY|PRIMEM|UNIT|AXIS|AUTHORITY|PARAMETER|PROJECTION|VERT_CS|[\\[\\],\\n\\r]+)", " ");
+                    terms = cleaned;
+                }
             }
             
             lookupFromLucene(terms);
@@ -267,6 +270,7 @@ public class Search extends BaseResource {
                 }
             }
         } catch(Throwable t) {
+            LOGGER.log(Level.SEVERE, "Search failure: " + t.getMessage(), t);
             if(t instanceof ResourceException) {
                 throw (ResourceException) t;
             } else {

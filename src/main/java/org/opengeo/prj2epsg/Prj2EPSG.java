@@ -36,6 +36,7 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
 import org.geotools.referencing.factory.AbstractAuthorityFactory;
 import org.geotools.referencing.factory.DeferredAuthorityFactory;
+import org.geotools.referencing.factory.epsg.ThreadedHsqlEpsgFactory;
 import org.geotools.util.WeakCollectionCleaner;
 import org.geotools.util.logging.Logging;
 import org.opengis.referencing.AuthorityFactory;
@@ -102,7 +103,7 @@ public class Prj2EPSG extends Application {
         StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
         File directory = new File(System.getProperty("java.io.tmpdir", "."), "Geotools");
         if (directory.isDirectory() || directory.mkdir()) {
-            directory = new File(directory, "LuceneIndex-" + 123);
+            directory = new File(directory, "LuceneIndex-" + ThreadedHsqlEpsgFactory.VERSION);
             directory.mkdir();
         }
         if (directory.exists() && directory.isDirectory()) {

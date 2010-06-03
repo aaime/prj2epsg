@@ -7,7 +7,10 @@ package org.opengeo.prj2epsg;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
+import org.geotools.referencing.factory.epsg.ThreadedHsqlEpsgFactory;
+import org.geotools.util.logging.Logging;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.Context;
@@ -36,6 +39,8 @@ import freemarker.template.Configuration;
  * 
  */
 public class BaseResource extends Resource {
+    protected static final Logger LOGGER = Logging.getLogger("prj2epsg");
+    
     protected Map<String, Object> dataModel = new LinkedHashMap<String, Object>();
 
     protected String type;
@@ -48,8 +53,9 @@ public class BaseResource extends Resource {
         // grab the type if possible
         type = (String) request.getAttributes().get("type");
         
-        // set the root
+        // set the root and the epsg version
         dataModel.put("html_webroot", request.getRootRef().toString());
+        dataModel.put("html_epsg_version", ThreadedHsqlEpsgFactory.VERSION.toString());
     }
 
     @Override
