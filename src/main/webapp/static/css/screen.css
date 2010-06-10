@@ -96,6 +96,8 @@ p big {
   width: 90px;
   background: url('../img/og_logo.png') no-repeat;
   color: transparent;
+  font-size: 0;
+  text-indent: -9999em;
 }
 
 .header a.logo.skygone {
