@@ -84,25 +84,25 @@ p big {
 }
 
 .header ul li {
-  display: inline;
+  display: block;
+  float: right;
+  margin-left: 1.5em;
   list-style: none;
 }
 
 .header a.logo {
   display: block;
-  float: right;
-  margin-left: 2em;
   height: 20px;
   width: 90px;
-  background: url('../img/og_logo.png') no-repeat;
+  background: url('../img/og_logo.png') no-repeat center middle;
   color: transparent;
   font-size: 0;
   text-indent: -9999em;
 }
 
 .header a.logo.skygone {
-  background: url('../img/sg_logo.png') no-repeat;
-  width: 123px;
+  background-image: url('../img/sg_logo.png');
+  width: 90px;
   margin-top: 1px;
 }
 
