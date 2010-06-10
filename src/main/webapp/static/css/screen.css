@@ -76,20 +76,32 @@ p big {
   text-decoration: none;
 }
 
-.header p {
+.header ul {
   position: absolute;
   top: 2.25em;
   right: 1.5em;
+  margin: 0;
+}
+
+.header ul li {
+  display: inline;
+  list-style: none;
 }
 
 .header a.logo {
   display: block;
   float: right;
-  margin-left: 0.5em;
+  margin-left: 2em;
   height: 20px;
   width: 90px;
   background: url('../img/og_logo.png') no-repeat;
   color: transparent;
+}
+
+.header a.logo.skygone {
+  background: url('../img/sg_logo.png') no-repeat;
+  width: 123px;
+  margin-top: 1px;
 }
 
 * html .header a.logo {

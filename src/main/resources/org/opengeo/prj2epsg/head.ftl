@@ -11,7 +11,10 @@
   <div class="container">
     <div class="header">
       <h1><a href="${html_webroot}/search">Prj2EPSG</a></h1>
-      <p><a class="logo" href="http://www.opengeo.org">OpenGeo</a></p>
+      <ul>
+        <li><a class="logo skygone" href="http://www.skygoneinc.com/">Skygone</a></li>
+        <li><a class="logo opengeo" href="http://opengeo.org/">OpenGeo</a></li>
+      </ul>
     </div><!-- End .header -->
 
     <div class="content">
