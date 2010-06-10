@@ -4,8 +4,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <title>Prj2EPSG</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
-    <link type="text/css" rel="stylesheet" href="${html_webroot}/static/css/screen.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link type="text/css" rel="stylesheet" href="${html_webroot}/static/css/screen.css" />
     <link rel="shortcut icon" href="${html_webroot}/static/img/favicon.ico" />
   </head>
 <body>

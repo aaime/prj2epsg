@@ -2,12 +2,12 @@
 
       <p><big>Prj2EPSG is a simple service for converting <a href="http://en.wikipedia.org/wiki/Well-known_text#Spatial_reference_systems">well-known text</a> projection information from <a href="http://en.wikipedia.org/wiki/Shapefile#Shapefile_projection_format_.28.prj.29">.prj files</a> into standard <a href="http://en.wikipedia.org/wiki/European_Petroleum_Survey_Group">EPSG codes</a>.</big></p>
 
-      <form class="input" action="search" method="POST" enctype="multipart/form-data">
+      <form class="input" action="search" method="post" enctype="multipart/form-data">
         <div class="options"><label for="terms">Paste a <acronym title="Well-known Text">WKT</acronym> definition or type keywords below</label>:
 		</div>
-		<textarea id="terms" name="terms" cols="60" rows="10"">${html_terms}</textarea>
+		<textarea id="terms" name="terms" cols="60" rows="10">${html_terms}</textarea>
 		<p>or <label for="prjfile">upload a .prj file</label>: <input type="file" id="prjfile" name="prjfile"/></p>
-		<input type="submit" value="Convert"/>
+		<input type="submit" value="Convert" />
       </form>
    
       <#if html_showResults == true>
