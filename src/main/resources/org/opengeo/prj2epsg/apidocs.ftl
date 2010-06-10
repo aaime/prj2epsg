@@ -26,7 +26,7 @@
        <p>Try out the following requests against prj2EPSG:</p>
        <ul>
          <li>Searching for EPSG codes in Italy:<br/>
-             <a href="search.json?terms=Italy">${html_webroot}search.json?terms=Italy</a>
+             <a href="search.json?terms=Italy">${html_webroot}/search.json?terms=Italy</a>
              <!-- Formatted using http://jsonformat.com -->
              <pre>{ "codes" : [ { "code" : "3003",
         "name" : "Monte Mario / Italy zone 1",
@@ -50,7 +50,7 @@
 }</pre>
          </li>
          <li>Searching for EPSG codes related to "New York West" (mind the quotes):
-             <br/><a href="search.json?terms=%22New York West%22">${html_webroot}search.json?terms=%22New York West%22</a>
+             <br/><a href="search.json?terms=%22New York West%22">${html_webroot}/search.json?terms=%22New York West%22</a>
 <pre>{ "codes" : [ { "code" : "2262",
         "name" : "NAD83 / New York West (ftUS)",
         "url" : "${html_webroot}/epsg/2262.json"
@@ -85,7 +85,7 @@
 }</pre>
          </li>
          <li>Searching for the Finland Uniform Coordinate System with a WKT representation:<br/>
-             <a href="${html_webroot}/search.json?mode=wkt&terms=PROJCS[%22KKJ+%2F+Finland+Uniform+Coordinate+System%22%2CGEOGCS[%22KKJ%22%2CDATUM[%22D_KKJ%22%2CSPHEROID[%22International_1924%22%2C6378388%2C297]]%2CPRIMEM[%22Greenwich%22%2C0]%2CUNIT[%22Degree%22%2C0.017453292519943295]]%2CPROJECTION[%22Transverse_Mercator%22]%2CPARAMETER[%22latitude_of_origin%22%2C0]%2CPARAMETER[%22central_meridian%22%2C27]%2CPARAMETER[%22scale_factor%22%2C1]%2CPARAMETER[%22false_easting%22%2C3500000]%2CPARAMETER[%22false_northing%22%2C0]%2CUNIT[%22Meter%22%2C1]]">${html_webroot}search.json?mode=wkt&terms=PROJCS[%22KKJ+%2F+Finland+Uniform+Coordinate+System%22%2CGE...</a>
+             <a href="${html_webroot}/search.json?mode=wkt&terms=PROJCS[%22KKJ+%2F+Finland+Uniform+Coordinate+System%22%2CGEOGCS[%22KKJ%22%2CDATUM[%22D_KKJ%22%2CSPHEROID[%22International_1924%22%2C6378388%2C297]]%2CPRIMEM[%22Greenwich%22%2C0]%2CUNIT[%22Degree%22%2C0.017453292519943295]]%2CPROJECTION[%22Transverse_Mercator%22]%2CPARAMETER[%22latitude_of_origin%22%2C0]%2CPARAMETER[%22central_meridian%22%2C27]%2CPARAMETER[%22scale_factor%22%2C1]%2CPARAMETER[%22false_easting%22%2C3500000]%2CPARAMETER[%22false_northing%22%2C0]%2CUNIT[%22Meter%22%2C1]]">${html_webroot}/search.json?mode=wkt&terms=PROJCS[%22KKJ+%2F+Finland+Uniform+Coordinate+System%22%2CGE...</a>
 <pre>{ "codes" : [ { "code" : "2393",
         "name" : "KKJ / Finland Uniform Coordinate System",
         "url" : "${html_webroot}/epsg/2393.json"
