@@ -17,12 +17,14 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/*
 import javax.imageio.spi.IIORegistry;
 import javax.imageio.spi.IIOServiceProvider;
 import javax.media.jai.JAI;
 import javax.media.jai.OperationRegistry;
 import javax.media.jai.RegistryElementDescriptor;
 import javax.media.jai.RegistryMode;
+*/
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -202,6 +204,8 @@ public class Prj2EPSG extends Application {
             // DataAccessFinder.reset();
             LOGGER.info("Shut down GT  SPI ");
 
+
+/*
             // unload everything that JAI ImageIO can still refer to
             // We need to store them and unregister later to avoid concurrent modification
             // exceptions
@@ -270,7 +274,8 @@ public class Prj2EPSG extends Application {
                     }
                 }
             }
-            
+  
+*/          
             // unload all of the jdbc drivers we have loaded. We need to store them and unregister
             // later to avoid concurrent modification exceptions
             Enumeration<Driver> drivers = DriverManager.getDrivers();
