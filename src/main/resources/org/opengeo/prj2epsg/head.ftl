@@ -6,6 +6,7 @@
     <title>Prj2EPSG</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" >
     <link type="text/css" rel="stylesheet" href="${html_webroot}/static/css/screen.css">
+    <link rel="shortcut icon" href="${html_webroot}/static/img/favicon.ico" />
   </head>
 <body>
   <div class="container">
