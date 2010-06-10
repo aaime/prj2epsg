@@ -94,16 +94,14 @@ p big {
   display: block;
   height: 20px;
   width: 90px;
-  background: url('../img/og_logo.png') no-repeat center middle;
+  background: url('../img/og_logo.png') no-repeat bottom;
   color: transparent;
   font-size: 0;
   text-indent: -9999em;
 }
 
 .header a.logo.skygone {
-  background-image: url('../img/sg_logo.png');
-  width: 90px;
-  margin-top: 1px;
+  background: url('../img/sg_logo.png') no-repeat bottom;
 }
 
 * html .header a.logo {
