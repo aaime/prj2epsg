@@ -91,6 +91,15 @@
     </repository>
 
     <repository>
+      <id>opengeo</id>
+      <name>OpenGeo Maven Repository</name>
+      <url>http://repo.opengeo.org/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+
+    <repository>
       <id>maven-restlet</id>
       <name>Restlet Maven Repository</name>
       <url>http://maven.restlet.org</url>
