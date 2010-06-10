@@ -5,8 +5,8 @@
       <form class="input" action="search" method="post" enctype="multipart/form-data">
         <div class="options"><label for="terms">Paste a <acronym title="Well-known Text">WKT</acronym> definition or type keywords below</label>: </div>
 		<p><textarea id="terms" name="terms" cols="60" rows="10">${html_terms}</textarea>
-		<br/>or <label for="prjfile">upload a .prj file</label>: <input type="file" id="prjfile" name="prjfile"/>
-		<br/><input type="submit" value="Convert" /></p>
+		<br/>or <label for="prjfile">upload a .prj file</label>: <input type="file" id="prjfile" name="prjfile"/></p>
+		<p><input type="submit" value="Convert" /></p>
       </form>
    
       <#if html_showResults == true>
