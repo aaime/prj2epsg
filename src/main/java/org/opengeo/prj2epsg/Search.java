@@ -248,6 +248,11 @@ public class Search extends BaseResource {
             throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST);
         }
         
+        // sanitize a bit the search terms
+        if(terms != null) {
+            terms = terms.trim();
+        }
+        
         // common values for the data model
         dataModel.put("html_showResults", Boolean.FALSE);
         dataModel.put("html_terms", terms != null ? terms : "");
@@ -258,7 +263,7 @@ public class Search extends BaseResource {
             mode = SearchMode.valueOf(modeKey);
         }
         try {
-            if (terms != null) {
+            if (terms != null && !"".equals(terms)) {
                 dataModel.put("html_showResults", Boolean.TRUE);
                 dataModel.put("codes", Collections.emptyList());
                 if(mode == SearchMode.auto) {
