@@ -151,23 +151,34 @@ public class Search extends BaseResource {
      */
     private void lookupAuto(String terms) throws ResourceException {
         try {
-            CoordinateReferenceSystem crs = CRS.parseWKT(terms);
+            // see if parseable
+            CRS.parseWKT(terms);
             lookupFromWkt(terms);
-        } catch (FactoryException e) {
-            // failed to parse as WKT. This might also mean the thing is a WKT, but with
-            // some parameters GT2 cannot parse. If it is, Lucene won't be happy either with it,
-            // so let's check and cleanup a bit the search string.
-            
-            if(terms.length() > 7) {
-                String start = terms.trim().substring(0, 7).toUpperCase();
-                if(start.startsWith("PROJCS") || start.startsWith("GEOGCS") || start.startsWith("COMPD_CS")) {
-                    // remove parenthesis and common terms
-                    String cleaned = terms.replaceAll("(COMPD_CS|PROJCS|GEOGCS|DATUM|SPHEROID|TOWGS84|AUTHORITY|PRIMEM|UNIT|AXIS|AUTHORITY|PARAMETER|PROJECTION|VERT_CS|[\\[\\],\\n\\r]+)", " ");
-                    terms = cleaned;
+        } catch (FactoryException e1) {
+            try {
+                // see if decodable
+                CoordinateReferenceSystem crs = CRS.decode(terms);
+                Integer code = CRS.lookupEpsgCode(crs, true);
+                if (code != null) {
+                    dataModel.put("exact", Boolean.TRUE);
+                    dataModel.put("codes", Arrays.asList(asCRSMap(String.valueOf(code), crs)));
+                } 
+            } catch(FactoryException e2) {
+                // failed to parse as WKT. This might also mean the thing is a WKT, but with
+                // some parameters GT2 cannot parse. If it is, Lucene won't be happy either with it,
+                // so let's check and cleanup a bit the search string.
+                
+                if(terms.length() > 7) {
+                    String start = terms.trim().substring(0, 7).toUpperCase();
+                    if(start.startsWith("PROJCS") || start.startsWith("GEOGCS") || start.startsWith("COMPD_CS")) {
+                        // remove parenthesis and common terms
+                        String cleaned = terms.replaceAll("(COMPD_CS|PROJCS|GEOGCS|DATUM|SPHEROID|TOWGS84|AUTHORITY|PRIMEM|UNIT|AXIS|AUTHORITY|PARAMETER|PROJECTION|VERT_CS|[\\[\\],\\n\\r]+)", " ");
+                        terms = cleaned;
+                    }
                 }
+                
+                lookupFromLucene(terms);
             }
-            
-            lookupFromLucene(terms);
         }
     }
 
@@ -230,7 +241,7 @@ public class Search extends BaseResource {
             dataModel.put("errors", "Invalid WKT syntax: " + e.getMessage());
         }
     }
-
+    
     Map<String, String> asCRSMap(String code, CoordinateReferenceSystem crs) {
         Map<String, String> map = new HashMap<String, String>();
         map.put("code", code);
