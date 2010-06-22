@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
@@ -75,6 +77,10 @@ public class Search extends BaseResource {
     }
     
     private void lookupFromLucene(String terms) throws ResourceException {
+        // the Lucene search syntax is _not_ something we want to expose users to, so 
+        // quote every term in order to avoid parsing exceptions
+        terms = quoteAllTerms(terms);
+        
         try {
             // search the results
             Query q = new QueryParser(Version.LUCENE_30, "wkt", new StandardAnalyzer(
@@ -101,6 +107,43 @@ public class Search extends BaseResource {
 
     }
     
+    /**
+     * This code 
+     * @param terms
+     * @return
+     */
+    String quoteAllTerms(String terms) {
+        // this is high regular expression wizardry coming from Stackoverflow:
+        // http://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
+        
+        // tokenize preserving groups contained in double and single quotes 
+        List<String> matchList = new ArrayList<String>();
+        Pattern regex = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+        Matcher regexMatcher = regex.matcher(terms);
+        while (regexMatcher.find()) {
+            if (regexMatcher.group(1) != null) {
+                // Add double-quoted string without the quotes
+                matchList.add(regexMatcher.group(1));
+            } else if (regexMatcher.group(2) != null) {
+                // Add single-quoted string without the quotes
+                matchList.add(regexMatcher.group(2));
+            } else {
+                // Add unquoted word
+                matchList.add(regexMatcher.group());
+            }
+        }
+        
+        // rebuild as a set of quoted, harmless bits
+        StringBuilder result = new StringBuilder();
+        for (String s : matchList) {
+            if(s != null && !"".equals(s)) {
+                result.append("\"" + s + "\" ");
+            }
+        }
+        
+        return result.toString().trim();
+    }
+
     /**
      * Tries to lookup as WKT, if that does not work, use a keyword based approach
      * @param terms
