@@ -11,20 +11,9 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-/*
-import javax.imageio.spi.IIORegistry;
-import javax.imageio.spi.IIOServiceProvider;
-import javax.media.jai.JAI;
-import javax.media.jai.OperationRegistry;
-import javax.media.jai.RegistryElementDescriptor;
-import javax.media.jai.RegistryMode;
-*/
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -204,78 +193,6 @@ public class Prj2EPSG extends Application {
             // DataAccessFinder.reset();
             LOGGER.info("Shut down GT  SPI ");
 
-
-/*
-            // unload everything that JAI ImageIO can still refer to
-            // We need to store them and unregister later to avoid concurrent modification
-            // exceptions
-            final IIORegistry ioRegistry = IIORegistry.getDefaultInstance();
-            Set<IIOServiceProvider> providersToUnload = new HashSet();
-            for (Iterator<Class<?>> cats = ioRegistry.getCategories(); cats.hasNext();) {
-                Class<?> category = cats.next();
-                for (Iterator it = ioRegistry.getServiceProviders(category, false); it.hasNext();) {
-                    final IIOServiceProvider provider = (IIOServiceProvider) it.next();
-                    if (webappClassLoader.equals(provider.getClass().getClassLoader())) {
-                        providersToUnload.add(provider);
-                    }
-                }
-            }
-            for (IIOServiceProvider provider : providersToUnload) {
-                ioRegistry.deregisterServiceProvider(provider);
-                LOGGER.info("Unregistering Image I/O provider " + provider);
-            }
-
-            // unload everything that JAI can still refer to
-            final OperationRegistry opRegistry = JAI.getDefaultInstance().getOperationRegistry();
-            for (String mode : RegistryMode.getModeNames()) {
-                for (Iterator descriptors = opRegistry.getDescriptors(mode).iterator(); descriptors != null
-                        && descriptors.hasNext();) {
-                    RegistryElementDescriptor red = (RegistryElementDescriptor) descriptors.next();
-                    int factoryCount = 0;
-                    int unregisteredCount = 0;
-                    // look for all the factories for that operation
-                    for (Iterator factories = opRegistry.getFactoryIterator(mode, red.getName()); factories != null
-                            && factories.hasNext();) {
-                        Object factory = factories.next();
-                        if (factory == null) {
-                            continue;
-                        }
-                        factoryCount++;
-                        if (webappClassLoader.equals(factory.getClass().getClassLoader())) {
-                            boolean unregistered = false;
-                            // we need to scan against all "products" to unregister the factory
-                            Vector orderedProductList = opRegistry.getOrderedProductList(mode, red
-                                    .getName());
-                            if (orderedProductList != null) {
-                                for (Iterator products = orderedProductList.iterator(); products != null
-                                        && products.hasNext();) {
-                                    String product = (String) products.next();
-                                    try {
-                                        opRegistry.unregisterFactory(mode, red.getName(), product,
-                                                factory);
-                                        LOGGER.info("Unregistering JAI factory "
-                                                + factory.getClass());
-                                    } catch (Throwable t) {
-                                        // may fail due to the factory not being registered against
-                                        // that product
-                                    }
-                                }
-                            }
-                            if (unregistered) {
-                                unregisteredCount++;
-                            }
-
-                        }
-                    }
-
-                    // if all the factories were unregistered, get rid of the descriptor as well
-                    if (factoryCount > 0 && unregisteredCount == factoryCount) {
-                        opRegistry.unregisterDescriptor(red);
-                    }
-                }
-            }
-  
-*/          
             // unload all of the jdbc drivers we have loaded. We need to store them and unregister
             // later to avoid concurrent modification exceptions
             Enumeration<Driver> drivers = DriverManager.getDrivers();
